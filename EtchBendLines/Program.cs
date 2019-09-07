@@ -101,7 +101,9 @@ namespace EtchBendLines
 
                 foreach (var etchLine in etchLines)
                 {
-                    var existing = dxf.Lines.FirstOrDefault(l => l.StartPoint.IsEqualTo(etchLine.StartPoint) && l.EndPoint.IsEqualTo(etchLine.EndPoint));
+                    var existing = dxf.Lines
+                        .Where(l => IsEtchLayer(l.Layer))
+                        .FirstOrDefault(l => l.StartPoint.IsEqualTo(etchLine.StartPoint) && l.EndPoint.IsEqualTo(etchLine.EndPoint));
 
                     if (existing != null)
                     {
@@ -115,6 +117,20 @@ namespace EtchBendLines
             }
 
             dxf.Save(filePath);
+        }
+
+        static bool IsEtchLayer(Layer layer)
+        {
+            if (layer.Name == "ETCH")
+                return true;
+
+            if (layer.Name == "SCRIBE")
+                return true;
+
+            if (layer.Name == "SCRIBE-TEXT")
+                return true;
+
+            return false;
         }
 
 		static void AssignBendDirections(IEnumerable<Bend> bendlines, IEnumerable<MText> bendNotes)
