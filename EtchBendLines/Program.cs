@@ -101,7 +101,7 @@ namespace EtchBendLines
 
                 foreach (var etchLine in etchLines)
                 {
-                    var existing = dxf.Lines.FirstOrDefault(l => l.StartPoint.IsEqualTo(etchLine.StartPoint));
+                    var existing = dxf.Lines.FirstOrDefault(l => l.StartPoint.IsEqualTo(etchLine.StartPoint) && l.EndPoint.IsEqualTo(etchLine.EndPoint));
 
                     if (existing != null)
                     {
