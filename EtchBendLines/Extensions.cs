@@ -92,11 +92,47 @@ namespace EtchBendLines
             return NormalizeRad(Math.Atan2(y, x));
         }
 
-
         static double NormalizeRad(double angle)
         {
             double r = angle % TwoPI;
             return r < 0 ? TwoPI + r : r;
+        }
+
+        public static bool IsPerpendicularTo(this Line line1, Line line2)
+        {
+            bool line1Vertical = line1.IsVertical();
+            bool line2Vertical = line2.IsVertical();
+
+            if (line1Vertical)
+                return line2.IsHorizontal();
+            else if (line2.IsVertical())
+                return line1.IsHorizontal();
+
+            return line1.Slope().IsEqualTo(-1 / line2.Slope());
+        }
+
+        public static bool IsParallelTo(this Line line1, Line line2)
+        {
+            if (line1.IsVertical())
+            {
+                if (line2.IsVertical())
+                    return true;
+
+                return false;
+            }
+            else if (line2.IsVertical())
+            {
+                return false;
+            }
+
+            return line2.Slope().IsEqualTo(line1.Slope());
+        }
+
+        public const double Epsilon = 0.00001;
+
+        public static bool IsEqualTo(this double a, double b, double tolerance = Epsilon)
+        {
+            return Math.Abs(b - a) <= tolerance;
         }
     }
 }

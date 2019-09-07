@@ -34,8 +34,7 @@ namespace EtchBendLines
             foreach (var file in files)
             {
                 AddEtchLines(file);
-                Console.WriteLine("----------------------------------------------------------------");
-
+                Console.WriteLine();
             }
 
             PressAnyKeyToExit();
@@ -49,8 +48,7 @@ namespace EtchBendLines
 
         static void AddEtchLines(string filePath)
         {
-            var name = Path.GetFileNameWithoutExtension(filePath);
-            Console.WriteLine($"Adding etch lines to file \"{name}\"");
+            Console.WriteLine(filePath);
 
             var dxf = LoadDoc(filePath);
             var bendLines = GetBendLines(dxf);
@@ -90,8 +88,12 @@ namespace EtchBendLines
 			AssignBendDirections(bendLines, bendNotes);
 
 			var upBends = bendLines.Where(b => b.Direction == BendDirection.Up);
+            var upBendCount = upBends.Count();
+            var downBendCount = bendLines.Count - upBendCount;
 
-            Console.WriteLine($"{upBends.Count()} up bends, {bendLines.Count - upBends.Count()} down bends.");
+            Console.WriteLine($"{upBendCount} Up     {downBendCount} Down");
+
+            var partType = GetPartType(bendLines);
 
             foreach (var bendline in upBends)
             {
@@ -262,5 +264,62 @@ namespace EtchBendLines
 
             return bendNotes;
         }
+
+        static PartType GetPartType(List<Bend> bends)
+        {
+            if (bends.Count == 0)
+                return PartType.Flat;
+
+            var upBends = bends.Where(b => b.Direction == BendDirection.Up).ToList();
+            var downBends = bends.Where(b => b.Direction == BendDirection.Down).ToList();
+
+            if (upBends.Count == 0 || downBends.Count == 0)
+            {
+                // bends are going the same direction
+
+                if (bends.Count == 2 && bends[0].IsParallelTo(bends[1]))
+                    return PartType.Channel;
+
+                if (bends.Count == 4)
+                {
+                    var groups = bends.GroupBy(b => b.Line.Slope()).ToList();
+
+                    if (groups.Count == 2)
+                    {
+                        var bend1 = groups[0].First();
+                        var bend2 = groups[1].First();
+
+                        if (bend1.IsPerpendicularTo(bend2))
+                        {
+                            return PartType.Pan;
+                        }
+                    }
+                }
+            }
+
+            if (bends.Count == 1)
+                return PartType.Angle;
+
+            if (bends.Count == 2)
+            {
+                var bend1 = bends[0];
+                var bend2 = bends[1];
+
+                if (bend1.IsParallelTo(bend2))
+                    return PartType.ZAngle;
+            }
+
+            return PartType.Other;
+        }
+    }
+
+    public enum PartType
+    {
+        Flat,
+        Angle,
+        Channel,
+        Pan,
+        ZAngle,
+        Other
     }
 }

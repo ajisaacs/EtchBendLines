@@ -8,8 +8,6 @@ namespace EtchBendLines
 {
     public class Bend
 	{
-        const double RadPerDeg = Math.PI / 180.0;
-
         public Line Line { get; set; }
 
 		public double YIntercept
@@ -32,7 +30,17 @@ namespace EtchBendLines
 			get { return Line.IsHorizontal(); }
 		}
 
-		public bool IsCollinearTo(Bend bend)
+        public bool IsParallelTo(Bend bend)
+        {
+            return Line.IsParallelTo(bend.Line);
+        }
+
+        public bool IsPerpendicularTo(Bend bend)
+        {
+            return Line.IsPerpendicularTo(bend.Line);
+        }
+
+        public bool IsCollinearTo(Bend bend)
 		{
 			if (bend.IsVertical || this.IsVertical)
 				return (bend.IsVertical && this.IsVertical && bend.YIntercept == this.YIntercept);
@@ -146,5 +154,14 @@ namespace EtchBendLines
 				return Math.Sqrt(x * x + y * y);
 			}
 		}
-	}
+
+        public double? Radius { get; set; }
+
+        public double? Angle { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Direction.ToString()} {Angle}° R{Radius}";
+        }
+    }
 }
