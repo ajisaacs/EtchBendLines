@@ -98,7 +98,20 @@ namespace EtchBendLines
             foreach (var bendline in upBends)
             {
 				var etchLines = bendline.GetEtchLines(ETCH_LENGTH);
-				dxf.AddEntity(etchLines);
+
+                foreach (var etchLine in etchLines)
+                {
+                    var existing = dxf.Lines.FirstOrDefault(l => l.StartPoint.IsEqualTo(etchLine.StartPoint));
+
+                    if (existing != null)
+                    {
+                        // ensure the layer is correct and skip adding the etch line since it already exists.
+                        existing.Layer = etchLine.Layer;
+                        continue;
+                    }
+
+                    dxf.AddEntity(etchLine);
+                }
             }
 
             dxf.Save(filePath);

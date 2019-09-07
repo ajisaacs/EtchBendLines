@@ -13,6 +13,11 @@ namespace EtchBendLines
             return new Vector2(pt.X, pt.Y);
         }
 
+        public static bool IsEqualTo(this Vector3 pt, Vector3 pt1)
+        {
+            return pt.X.IsEqualTo(pt1.X) && pt.Y.IsEqualTo(pt1.Y) && pt.Z.IsEqualTo(pt1.Z);
+        }
+
         public static bool IsVertical(this Line line)
         {
             return line.StartPoint.X == line.EndPoint.X;
