@@ -2,7 +2,7 @@
 using netDxf.Entities;
 using System;
 
-namespace EtchBendLine
+namespace EtchBendLines
 {
     public static class Extensions
     {

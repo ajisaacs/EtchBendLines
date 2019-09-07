@@ -1,4 +1,4 @@
-﻿namespace EtchBendLine
+﻿namespace EtchBendLines
 {
     public enum BendDirection
 	{

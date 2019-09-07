@@ -4,7 +4,7 @@ using netDxf.Tables;
 using System;
 using System.Collections.Generic;
 
-namespace EtchBendLine
+namespace EtchBendLines
 {
     public class Bend
 	{
