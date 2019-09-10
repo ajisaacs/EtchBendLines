@@ -139,5 +139,28 @@ namespace EtchBendLines
         {
             return Math.Abs(b - a) <= tolerance;
         }
+
+        public static Vector2 ClosestPointOnLineTo(this Line line, Vector2 pt)
+        {
+            var startPoint = line.StartPoint.ToVector2();
+            var endPoint = line.EndPoint.ToVector2();
+
+            var diff1 = pt - startPoint;
+            var diff2 = endPoint - startPoint;
+            var dotProduct = diff1.X * diff2.X + diff1.Y * diff2.Y;
+            var lengthSquared = diff2.X * diff2.X + diff2.Y * diff2.Y;
+            var param = dotProduct / lengthSquared;
+
+            if (param < 0)
+                return startPoint;
+            else if (param > 1)
+                return endPoint;
+            else
+            {
+                return new Vector2(
+                    startPoint.X + param * diff2.X,
+                    startPoint.Y + param * diff2.Y);
+            }
+        }
     }
 }

@@ -3,10 +3,10 @@ using netDxf.Entities;
 using netDxf.Tables;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace EtchBendLines
 {
@@ -19,7 +19,9 @@ namespace EtchBendLines
 			Color = AciColor.Yellow
 		};
 
-		static void Main(string[] args)
+        static Regex bendNoteRegex = new Regex(@"(?<direction>UP|DOWN|DN)\s*(?<angle>\d*(\.\d*)?)°\s*R\s*(?<radius>\d*(\.\d*)?)");
+
+        static void Main(string[] args)
         {
 			var path = AppDomain.CurrentDomain.BaseDirectory;
             var files = Directory.GetFiles(path, "*.dxf", SearchOption.AllDirectories);
@@ -85,8 +87,6 @@ namespace EtchBendLines
 				note.Layer = BendLayer;
 			}
 
-			AssignBendDirections(bendLines, bendNotes);
-
 			var upBends = bendLines.Where(b => b.Direction == BendDirection.Up);
             var upBendCount = upBends.Count();
             var downBendCount = bendLines.Count - upBendCount;
@@ -133,121 +133,118 @@ namespace EtchBendLines
             return false;
         }
 
-		static void AssignBendDirections(IEnumerable<Bend> bendlines, IEnumerable<MText> bendNotes)
-		{
-			foreach (var bendline in bendlines)
-			{
-				var bendNote = FindBendNote(bendline.Line, bendNotes);
-
-				if (bendNote == null)
-					continue;
-
-				bendNote.Layer = BendLayer;
-
-				var note = bendNote.Value.ToUpper();
-
-				if (note.Contains("UP"))
-					bendline.Direction = BendDirection.Up;
-
-				else if (note.Contains("DOWN") || note.Contains("DN"))
-					bendline.Direction = BendDirection.Down;
-			}
-		}
-
-		//static MText FindBendNote(Line bendLine, IEnumerable<MText> bendNotes)
-  //      {
-  //          var startPoint = new Vector2(bendLine.StartPoint.X, bendLine.StartPoint.Y);
-  //          var endPoint = new Vector2(bendLine.EndPoint.X, bendLine.EndPoint.Y);
-  //          var angle = startPoint.AngleTo(endPoint);
-
-  //          if (angle >= 180.0)
-  //              angle -= 180.0;
-
-  //          const double ANGLE_TOLERANCE = 0.001;
-
-  //          var bendNotesWithSameAngle = bendNotes.Where(n => Math.Abs(n.Rotation - angle) < ANGLE_TOLERANCE).ToList();
-
-  //          var midPoint = bendLine.MidPoint();
-
-  //          MText closestNote = bendNotes.First();
-  //          Vector2 closestPoint = closestNote.Position.ToVector2();
-
-
-
-  //          foreach (var note in bendNotes)
-  //          {
-  //              var pt = note.Position.ToVector2();
-  //              var dist = midPoint.DistanceTo(pt);
-
-  //              if (dist < distance)
-  //              {
-  //                  closestNote = note;
-  //                  distance = dist;
-  //                  closestPoint = pt;
-  //              }
-  //          }
-
-		//	var distToBendNote = closestNote.Position.ToVector2().DistanceTo(midPoint);
-
-		//	if (distToBendNote > 18)
-		//		return null;
-
-  //          return closestNote;
-  //      }
-
-		static MText FindBendNote(Line bendLIne, IEnumerable<MText> bendNotes)
-		{
-			var list = bendNotes.ToList();
-			var shortestDist = double.MaxValue;
-			var shortestDistIndex = -1;
-
-			for (int i = 0; i < list.Count; i++)
-			{
-				var note = list[i];
-				var notePos = note.Position.ToVector2();
-				var perpendicularPoint = bendLIne.PointPerpendicularTo(notePos);
-				var dist = notePos.DistanceTo(perpendicularPoint);
-
-				if (dist < shortestDist)
-				{
-					shortestDistIndex = i;
-					shortestDist = dist;
-				}
-			}
-
-			if (shortestDistIndex == -1)
-				return null;
-
-			var bendNote = list[shortestDistIndex];
-			var maxAcceptableDist = bendNote.Height * 2.0;
-
-			if (shortestDist > maxAcceptableDist)
-				return null;
-
-			return bendNote;
-		}
-
-        static Vector2? FindClosestPoint(Vector2 originPoint, List<Vector2> pts)
+        static void AssignBendDirections(IEnumerable<Bend> bendlines, IEnumerable<MText> bendNotes)
         {
-            if (pts == null || pts.Any() == false)
+            foreach (var bendline in bendlines)
+            {
+                var bendNote = FindBendNote(bendline.Line, bendNotes);
+
+                if (bendNote == null)
+                    continue;
+
+                var note = bendNote.Value.ToUpper();
+
+                if (note.Contains("UP"))
+                    bendline.Direction = BendDirection.Up;
+
+                else if (note.Contains("DOWN") || note.Contains("DN"))
+                    bendline.Direction = BendDirection.Down;
+
+                var match = bendNoteRegex.Match(note);
+
+                if (match.Success)
+                {
+                    bendline.Radius = double.Parse(match.Groups["radius"].Value);
+                    bendline.Angle = double.Parse(match.Groups["angle"].Value);
+                }
+            }
+        }
+
+        static double MaxBendRadius
+        {
+            get { return double.Parse(ConfigurationManager.AppSettings["MaxBendRadius"]); }
+        }
+
+        //static MText FindBendNote(Line bendLine, IEnumerable<MText> bendNotes)
+        //      {
+        //          var startPoint = new Vector2(bendLine.StartPoint.X, bendLine.StartPoint.Y);
+        //          var endPoint = new Vector2(bendLine.EndPoint.X, bendLine.EndPoint.Y);
+        //          var angle = startPoint.AngleTo(endPoint);
+
+        //          if (angle >= 180.0)
+        //              angle -= 180.0;
+
+        //          const double ANGLE_TOLERANCE = 0.001;
+
+        //          var bendNotesWithSameAngle = bendNotes.Where(n => Math.Abs(n.Rotation - angle) < ANGLE_TOLERANCE).ToList();
+
+        //          var midPoint = bendLine.MidPoint();
+
+        //          MText closestNote = bendNotes.First();
+        //          Vector2 closestPoint = closestNote.Position.ToVector2();
+
+
+
+        //          foreach (var note in bendNotes)
+        //          {
+        //              var pt = note.Position.ToVector2();
+        //              var dist = midPoint.DistanceTo(pt);
+
+        //              if (dist < distance)
+        //              {
+        //                  closestNote = note;
+        //                  distance = dist;
+        //                  closestPoint = pt;
+        //              }
+        //          }
+
+        //	var distToBendNote = closestNote.Position.ToVector2().DistanceTo(midPoint);
+
+        //	if (distToBendNote > 18)
+        //		return null;
+
+        //          return closestNote;
+        //      }
+
+        static MText FindBendNote(Line bendLine, IEnumerable<MText> bendNotes)
+        {
+            var bendNotesList = bendNotes.ToList();
+
+            for (int i = bendNotesList.Count - 1; i >= 0; i--)
+            {
+                var note = bendNotesList[i];
+                var notePos = note.Position.ToVector2();
+                var perpendicularPoint = bendLine.PointPerpendicularTo(notePos);
+                var dist = notePos.DistanceTo(perpendicularPoint);
+                var maxAcceptableDist = note.Height * 2.0;
+
+                if (dist > maxAcceptableDist)
+                    bendNotesList.RemoveAt(i);
+            }
+
+            if (bendNotesList.Count == 0)
                 return null;
 
-            var closest = pts[0];
-            var distance = originPoint.DistanceTo(closest);
+            var closestNote = bendNotesList.First();
+            var p1 = closestNote.Position.ToVector2();
+            var p2 = bendLine.ClosestPointOnLineTo(p1);
+            var dist2 = p1.DistanceTo(p2);
 
-            for (int i = 1; i < pts.Count; i++)
+            for (int i = 1; i < bendNotesList.Count; i++)
             {
-                var pt = pts[i];
-                var dist = originPoint.DistanceTo(pt);
+                var note = bendNotesList[i];
+                var p3 = note.Position.ToVector2();
+                var p4 = bendLine.ClosestPointOnLineTo(p3);
+                var dist = p3.DistanceTo(p4);
 
-                if (dist < distance)
+                if (dist < dist2)
                 {
-                    distance = dist;
-                    closest = pts[i];
+                    dist2 = dist;
+                    closestNote = note;
                 }
             }
 
-            return closest;
+            return closestNote;
         }
 
         static DxfDocument LoadDoc(string file)
@@ -257,24 +254,26 @@ namespace EtchBendLines
 
         static List<Bend> GetBendLines(DxfDocument dxf)
         {
-			var bends = new List<Bend>();
+            var bends = new List<Bend>();
+            var bendNotes = GetBendNotes(dxf);
 
             foreach (var line in dxf.Lines)
             {
-				if (line.Linetype.Name != "CENTERX2" && line.Layer.Name != "BEND")
-					continue;
+                if (line.Linetype.Name != "CENTERX2" && line.Layer.Name != "BEND")
+                    continue;
 
-				var bend = new Bend
-				{
-					Line = line,
-					Direction = BendDirection.Unknown
-				};
+                var bend = new Bend
+                {
+                    Line = line,
+                    Direction = BendDirection.Unknown
+                };
 
-				
-				bends.Add(bend);
+                bends.Add(bend);
             }
 
-            return bends;
+            AssignBendDirections(bends, bendNotes);
+
+            return bends.Where(b => b.Radius <= MaxBendRadius).ToList();
         }
 
         static List<MText> GetBendNotes(DxfDocument dxf)
