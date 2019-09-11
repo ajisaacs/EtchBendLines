@@ -142,7 +142,7 @@ namespace EtchBendLines
                 if (bendNote == null)
                     continue;
 
-                var note = bendNote.Value.ToUpper();
+                var note = bendNote.Value.ToUpper().Replace("SHARP", "R0");
 
                 if (note.Contains("UP"))
                     bendline.Direction = BendDirection.Up;
