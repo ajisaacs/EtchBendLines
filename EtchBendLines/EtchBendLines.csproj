@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Bend.cs" />
     <Compile Include="BendDirection.cs" />
+    <Compile Include="BendLineExtractor.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

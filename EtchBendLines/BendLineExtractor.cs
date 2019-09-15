@@ -24,6 +24,10 @@ namespace EtchBendLines
         /// </summary>
         public double MaxBendRadius { get; set; } = 4;
 
+        public double SharpRadius = 0.001;
+
+        public bool ReplaceSharpRadius { get; set; } = true;
+
         /// <summary>
         /// The regular expression pattern the bend note must match
         /// </summary>
@@ -35,6 +39,9 @@ namespace EtchBendLines
         {
             var bends = new List<Bend>();
             var bendNotes = GetBendNotes();
+
+            if (ReplaceSharpRadius)
+                FixSharpBends();
 
             foreach (var line in DxfDocument.Lines)
             {
@@ -57,19 +64,47 @@ namespace EtchBendLines
 
         private List<MText> GetBendNotes()
         {
-            var bendNotes = new List<MText>();
+            return DxfDocument.MTexts
+                .Where(t => GetBendDirection(t) != BendDirection.Unknown)
+                .ToList();
+        }
 
-            foreach (var text in DxfDocument.MTexts)
+        private void FixSharpBends()
+        {
+            var bendNotes = GetBendNotes();
+
+            foreach (var bendNote in bendNotes)
             {
-                var textAsUpper = text.Value.ToUpper();
+                var text = bendNote.Value?.ToUpper();
 
-                if (textAsUpper.Contains("UP") || textAsUpper.Contains("DOWN"))
-                {
-                    bendNotes.Add(text);
-                }
+                if (text == null)
+                    continue;
+
+                var index = text.IndexOf("SHARP");
+
+                if (index == -1)
+                    continue;
+
+                bendNote.Value = bendNote.Value
+                    .Remove(index, 5)
+                    .Insert(index, $"R{SharpRadius}");
             }
+        }
 
-            return bendNotes;
+        private static BendDirection GetBendDirection(MText mText)
+        {
+            if (mText == null || mText.Value == null)
+                return BendDirection.Unknown;
+
+            var text = mText.Value.ToUpper();
+
+            if (text.Contains("UP"))
+                return BendDirection.Up;
+
+            if (text.Contains("DOWN") || text.Contains("DN"))
+                return BendDirection.Down;
+
+            return BendDirection.Unknown;
         }
 
         private static void AssignBendDirections(IEnumerable<Bend> bendlines, IEnumerable<MText> bendNotes)
@@ -82,15 +117,9 @@ namespace EtchBendLines
                     continue;
 
                 bendline.BendNote = bendNote;
+                bendline.Direction = GetBendDirection(bendNote);
 
-                var note = bendNote.Value.ToUpper();
-
-                if (note.Contains("UP"))
-                    bendline.Direction = BendDirection.Up;
-
-                else if (note.Contains("DOWN") || note.Contains("DN"))
-                    bendline.Direction = BendDirection.Down;
-
+                var note = bendNote.Value.ToUpper().Replace("SHARP", "R0");
                 var match = bendNoteRegex.Match(note);
 
                 if (match.Success)
