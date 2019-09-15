@@ -10,7 +10,9 @@ namespace EtchBendLines
 	{
         public Line Line { get; set; }
 
-		public double YIntercept
+        public MText BendNote { get; set; }
+
+        public double YIntercept
 		{
 			get { return Line.YIntercept(); }
 		}
