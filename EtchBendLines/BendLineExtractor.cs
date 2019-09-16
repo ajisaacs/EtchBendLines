@@ -24,7 +24,7 @@ namespace EtchBendLines
         /// </summary>
         public double MaxBendRadius { get; set; } = 4;
 
-        public double SharpRadius = 0.001;
+        public double SharpRadius { get; set; } = 0.001;
 
         public bool ReplaceSharpRadius { get; set; } = true;
 
