@@ -1,5 +1,4 @@
 ﻿using netDxf;
-using netDxf.Entities;
 using netDxf.Tables;
 using System;
 using System.Collections.Generic;
@@ -12,18 +11,18 @@ namespace EtchBendLines
 {
     class Program
     {
-		const double ETCH_LENGTH = 1.0;
+        const double ETCH_LENGTH = 1.0;
 
-		static Layer BendLayer = new Layer("BEND")
-		{
-			Color = AciColor.Yellow
-		};
+        static Layer BendLayer = new Layer("BEND")
+        {
+            Color = AciColor.Yellow
+        };
 
         static Regex bendNoteRegex = new Regex(@"(?<direction>UP|DOWN|DN)\s*(?<angle>\d*(\.\d*)?)°\s*R\s*(?<radius>\d*(\.\d*)?)");
 
         static void Main(string[] args)
         {
-			var path = AppDomain.CurrentDomain.BaseDirectory;
+            var path = AppDomain.CurrentDomain.BaseDirectory;
             var files = Directory.GetFiles(path, "*.dxf", SearchOption.AllDirectories);
 
             if (files == null || files.Length == 0)
@@ -68,13 +67,13 @@ namespace EtchBendLines
             }
 
             foreach (var bendLine in bendLines)
-			{
-				bendLine.Line.Layer = BendLayer;
-				bendLine.Line.Color = AciColor.ByLayer;
+            {
+                bendLine.Line.Layer = BendLayer;
+                bendLine.Line.Color = AciColor.ByLayer;
                 bendLine.BendNote.Layer = BendLayer;
-			}
+            }
 
-			var upBends = bendLines.Where(b => b.Direction == BendDirection.Up);
+            var upBends = bendLines.Where(b => b.Direction == BendDirection.Up);
             var upBendCount = upBends.Count();
             var downBendCount = bendLines.Count - upBendCount;
 
@@ -84,7 +83,7 @@ namespace EtchBendLines
 
             foreach (var bendline in upBends)
             {
-				var etchLines = bendline.GetEtchLines(ETCH_LENGTH);
+                var etchLines = bendline.GetEtchLines(ETCH_LENGTH);
 
                 foreach (var etchLine in etchLines)
                 {

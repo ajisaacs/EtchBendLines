@@ -28,58 +28,58 @@ namespace EtchBendLines
             return line.StartPoint.Y == line.EndPoint.Y;
         }
 
-		public static double Slope(this Line line)
-		{
-			if (line.IsVertical())
-				return double.NaN;
+        public static double Slope(this Line line)
+        {
+            if (line.IsVertical())
+                return double.NaN;
 
-			var p1 = line.StartPoint;
-			var p2 = line.EndPoint;
+            var p1 = line.StartPoint;
+            var p2 = line.EndPoint;
 
-			return Math.Round((p2.Y - p1.Y) / (p2.X - p1.X), 4);
-		}
+            return Math.Round((p2.Y - p1.Y) / (p2.X - p1.X), 4);
+        }
 
-		public static double YIntercept(this Line line)
-		{
-			var p1 = line.StartPoint;
-			var p2 = line.EndPoint;
-			var slope = line.Slope();
+        public static double YIntercept(this Line line)
+        {
+            var p1 = line.StartPoint;
+            var p2 = line.EndPoint;
+            var slope = line.Slope();
 
-			// y = mx + b
+            // y = mx + b
 
-			return Math.Round(p1.Y - slope * p1.X, 4);
-		}
+            return Math.Round(p1.Y - slope * p1.X, 4);
+        }
 
-		public static Vector2 PointPerpendicularTo(this Line line, Vector2 pt)
-		{
-			var startPoint = line.StartPoint.ToVector2();
-			var endPoint = line.EndPoint.ToVector2();
+        public static Vector2 PointPerpendicularTo(this Line line, Vector2 pt)
+        {
+            var startPoint = line.StartPoint.ToVector2();
+            var endPoint = line.EndPoint.ToVector2();
 
-			var d1 = pt - startPoint;
-			var d2 = endPoint - startPoint;
-			var dotProduct = d1.X * d2.X + d1.Y * d2.Y;
-			var lengthSquared = d2.X * d2.X + d2.Y * d2.Y;
-			var param = dotProduct / lengthSquared;
+            var d1 = pt - startPoint;
+            var d2 = endPoint - startPoint;
+            var dotProduct = d1.X * d2.X + d1.Y * d2.Y;
+            var lengthSquared = d2.X * d2.X + d2.Y * d2.Y;
+            var param = dotProduct / lengthSquared;
 
-			if (param < 0)
-				return startPoint;
-			else if (param > 1)
-				return endPoint;
-			else
-			{
-				return new Vector2(
-					startPoint.X + param * d2.X,
-					startPoint.Y + param * d2.Y);
-			}
-		}
+            if (param < 0)
+                return startPoint;
+            else if (param > 1)
+                return endPoint;
+            else
+            {
+                return new Vector2(
+                    startPoint.X + param * d2.X,
+                    startPoint.Y + param * d2.Y);
+            }
+        }
 
-		public static Vector2 MidPoint(this Line line)
-		{
-			var x = (line.StartPoint.X + line.EndPoint.X) * 0.5;
-			var y = (line.StartPoint.Y + line.EndPoint.Y) * 0.5;
+        public static Vector2 MidPoint(this Line line)
+        {
+            var x = (line.StartPoint.X + line.EndPoint.X) * 0.5;
+            var y = (line.StartPoint.Y + line.EndPoint.Y) * 0.5;
 
-			return new Vector2(x, y);
-		}
+            return new Vector2(x, y);
+        }
 
         public static double DistanceTo(this Vector2 startPoint, Vector2 endPoint)
         {
