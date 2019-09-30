@@ -61,16 +61,9 @@ namespace EtchBendLines
             var lengthSquared = d2.X * d2.X + d2.Y * d2.Y;
             var param = dotProduct / lengthSquared;
 
-            if (param < 0)
-                return startPoint;
-            else if (param > 1)
-                return endPoint;
-            else
-            {
-                return new Vector2(
-                    startPoint.X + param * d2.X,
-                    startPoint.Y + param * d2.Y);
-            }
+            return new Vector2(
+                startPoint.X + param * d2.X,
+                startPoint.Y + param * d2.Y);
         }
 
         public static Vector2 MidPoint(this Line line)
