@@ -18,8 +18,6 @@ namespace EtchBendLines
             Color = AciColor.Yellow
         };
 
-        static Regex bendNoteRegex = new Regex(@"(?<direction>UP|DOWN|DN)\s*(?<angle>\d*(\.\d*)?)°\s*R\s*(?<radius>\d*(\.\d*)?)");
-
         static void Main(string[] args)
         {
             var path = AppDomain.CurrentDomain.BaseDirectory;

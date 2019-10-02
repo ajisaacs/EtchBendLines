@@ -57,25 +57,13 @@ namespace EtchBendLines
         {
             var lines = new List<Line>();
 
-            var etchLayer = new Layer("ETCH")
-            {
-                Color = AciColor.Green,
-            };
-
             var startPoint = new Vector2(Line.StartPoint.X, Line.StartPoint.Y);
             var endPoint = new Vector2(Line.EndPoint.X, Line.EndPoint.Y);
             var bendLength = startPoint.DistanceTo(endPoint);
 
             if (bendLength < (etchLength * 3.0))
             {
-                var fullLengthLine = new Line(Line.StartPoint, Line.EndPoint)
-                {
-                    Layer = etchLayer
-                };
-
-                lines.Add(fullLengthLine);
-
-                return lines;
+                lines.Add(new Line(Line.StartPoint, Line.EndPoint));
             }
             else
             {
@@ -85,33 +73,19 @@ namespace EtchBendLines
                 {
                     var x = Line.StartPoint.X;
 
-                    var bottomY1 = Line.StartPoint.Y < Line.EndPoint.Y ? Line.StartPoint.Y : Line.EndPoint.Y;
+                    var bottomY1 = Math.Min(startPoint.Y, endPoint.Y);
                     var bottomY2 = bottomY1 + etchLength;
 
-                    var topY1 = Line.StartPoint.Y > Line.EndPoint.Y ? Line.StartPoint.Y : Line.EndPoint.Y;
+                    var topY1 = Math.Max(startPoint.Y, endPoint.Y);
                     var topY2 = topY1 - etchLength;
 
                     var p1 = new Vector2(x, bottomY1);
                     var p2 = new Vector2(x, bottomY2);
-
                     var p3 = new Vector2(x, topY1);
                     var p4 = new Vector2(x, topY2);
 
-                    var bottomPoint = Line.StartPoint.Y < Line.EndPoint.Y ? Line.StartPoint : Line.EndPoint;
-                    var bottomOffsetPoint = new Vector2(bottomPoint.X, bottomPoint.Y + etchLength);
-
-                    var line1 = new Line(p1, p2)
-                    {
-                        Layer = etchLayer
-                    };
-
-                    var line2 = new Line(p3, p4)
-                    {
-                        Layer = etchLayer
-                    };
-
-                    lines.Add(line1);
-                    lines.Add(line2);
+                    lines.Add(new Line(p1, p2));
+                    lines.Add(new Line(p3, p4));
                 }
                 else
                 {
@@ -123,23 +97,22 @@ namespace EtchBendLines
 
                     var p1 = new Vector2(start.X, start.Y);
                     var p2 = new Vector2(start.X + x1, start.Y + y1);
-
                     var p3 = new Vector2(end.X, end.Y);
                     var p4 = new Vector2(end.X - x1, end.Y - y1);
 
-                    var line1 = new Line(p1, p2)
-                    {
-                        Layer = etchLayer
-                    };
-
-                    var line2 = new Line(p3, p4)
-                    {
-                        Layer = etchLayer
-                    };
-
-                    lines.Add(line1);
-                    lines.Add(line2);
+                    lines.Add(new Line(p1, p2));
+                    lines.Add(new Line(p3, p4));
                 }
+            }
+
+            var etchLayer = new Layer("ETCH")
+            {
+                Color = AciColor.Green,
+            };
+
+            foreach (var line in lines)
+            {
+                line.Layer = etchLayer;
             }
 
             return lines;
