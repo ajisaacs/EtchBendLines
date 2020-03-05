@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace EtchBendLines
 {
-    class Program
+    public class Program
     {
         const double ETCH_LENGTH = 1.0;
 
@@ -45,7 +45,7 @@ namespace EtchBendLines
             Console.ReadKey();
         }
 
-        static void AddEtchLines(string filePath)
+        public static void AddEtchLines(string filePath)
         {
             Console.WriteLine(filePath);
 
