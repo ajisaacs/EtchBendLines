@@ -13,26 +13,49 @@ namespace EtchBendLines
 
         static void Main(string[] args)
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var files = Directory.GetFiles(path, "*.dxf", SearchOption.AllDirectories);
-
-            etcher.EtchLength = double.Parse(ConfigurationManager.AppSettings["EtchLength"]);
-            etcher.MaxBendRadius = double.Parse(ConfigurationManager.AppSettings["MaxBendRadius"]);
-
-            if (files == null || files.Length == 0)
+            try
             {
-                Console.WriteLine($"No DXF files founds. Place DXF files in \"{AppDomain.CurrentDomain.BaseDirectory}\" and run this program again.");
-                PressAnyKeyToExit();
-                return;
+                var path = AppDomain.CurrentDomain.BaseDirectory;
+                var files = Directory.GetFiles(path, "*.dxf", SearchOption.AllDirectories);
+
+                etcher.EtchLength = GetAppSettingAsDouble("EtchLength");
+                etcher.MaxBendRadius = GetAppSettingAsDouble("MaxBendRadius");
+
+                if (files == null || files.Length == 0)
+                {
+                    Console.WriteLine($"No DXF files founds. Place DXF files in \"{AppDomain.CurrentDomain.BaseDirectory}\" and run this program again.");
+                }
+                else
+                {
+                    foreach (var file in files)
+                    {
+                        etcher.AddEtchLines(file);
+                        Console.WriteLine();
+                    }
+                }
             }
-
-            foreach (var file in files)
+            catch (Exception ex)
             {
-                etcher.AddEtchLines(file);
-                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"An error occured: {ex.Message}");
+                Console.ResetColor();
             }
 
             PressAnyKeyToExit();
+        }
+
+        static double GetAppSettingAsDouble(string name)
+        {
+            double v;
+
+            try
+            {
+                return double.Parse(ConfigurationManager.AppSettings[name]);
+            }
+            catch
+            {
+               throw new Exception($"Failed to convert the value of AppSetting[\"{name}\"] to double");
+            }
         }
 
         static void PressAnyKeyToExit()
