@@ -3,25 +3,41 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace EtchBendLines
 {
     public class Program
     {
-        static Etcher etcher = new Etcher();
-
         static void Main(string[] args)
         {
             try
             {
-                var path = AppDomain.CurrentDomain.BaseDirectory;
-                var files = Directory.GetFiles(path, "*.dxf", SearchOption.AllDirectories);
-
+                var etcher = new Etcher();
                 etcher.EtchLength = GetAppSettingAsDouble("EtchLength");
                 etcher.MaxBendRadius = GetAppSettingAsDouble("MaxBendRadius");
 
-                if (files == null || files.Length == 0)
+                var paths = new List<string>(args);
+
+                if (paths.Count == 0)
+                {
+                    paths.Add(AppDomain.CurrentDomain.BaseDirectory);
+                }
+
+                var files = new List<string>();
+
+                foreach (var path in paths)
+                {
+                    if (File.Exists(path))
+                    {
+                        files.Add(path);
+                    }
+                    else if (Directory.Exists(path))
+                    {
+                        files.AddRange(Directory.GetFiles(path, "*.dxf", SearchOption.AllDirectories));
+                    }
+                }
+
+                if (files.Count == 0)
                 {
                     Console.WriteLine($"No DXF files founds. Place DXF files in \"{AppDomain.CurrentDomain.BaseDirectory}\" and run this program again.");
                 }

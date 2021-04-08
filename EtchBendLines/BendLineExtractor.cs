@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace EtchBendLines
 {
-    class BendLineExtractor
+    public class BendLineExtractor
     {
         public BendLineExtractor(string dxfFile)
         {
