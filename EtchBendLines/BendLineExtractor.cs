@@ -1,6 +1,7 @@
 ﻿using netDxf;
 using netDxf.Entities;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -124,8 +125,10 @@ namespace EtchBendLines
 
                 if (match.Success)
                 {
-                    bendline.Radius = double.Parse(match.Groups["radius"].Value);
-                    bendline.Angle = double.Parse(match.Groups["angle"].Value);
+                    var radius = match.Groups["radius"].Value;
+                    var angle = match.Groups["angle"].Value;
+                    bendline.Radius = double.Parse(radius, CultureInfo.InvariantCulture);
+                    bendline.Angle = double.Parse(angle, CultureInfo.InvariantCulture);
                 }
             }
         }
