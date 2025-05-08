@@ -32,7 +32,10 @@ namespace EtchBendLines
         /// <summary>
         /// The regular expression pattern the bend note must match
         /// </summary>
-        static readonly Regex bendNoteRegex = new Regex(@"(?<direction>UP|DOWN|DN)\s*(?<angle>\d*(\.\d*)?)°\s*R\s*(?<radius>\d*(\.\d*)?)");
+        static readonly Regex bendNoteRegex = new Regex(
+            @"\b(?<direction>UP|DOWN|DN)\s+(?<angle>\d+(\.\d+)?)°?\s*R\s*(?<radius>\d+(\.\d+)?)\b",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
 
         public DxfDocument DxfDocument { get; private set; }
 
