@@ -1,4 +1,5 @@
 ﻿using netDxf;
+using netDxf.Entities;
 using netDxf.Tables;
 using System;
 using System.Collections.Generic;
@@ -8,9 +9,14 @@ namespace EtchBendLines
 {
     public class Etcher
     {
-        public Layer BendLayer = new Layer("BEND")
+        public readonly Layer BendLayer = new Layer("BEND")
         {
             Color = AciColor.Yellow
+        };
+
+        static readonly Layer EtchLayer = new Layer("ETCH")
+        {
+            Color = AciColor.Green,
         };
 
         public double EtchLength { get; set; } = 1.0;
@@ -40,7 +46,9 @@ namespace EtchBendLines
             {
                 bendLine.Line.Layer = BendLayer;
                 bendLine.Line.Color = AciColor.ByLayer;
+
                 bendLine.BendNote.Layer = BendLayer;
+                bendLine.BendNote.Color = AciColor.ByLayer;
             }
 
             var upBends = bendLines.Where(b => b.Direction == BendDirection.Up);
@@ -51,7 +59,7 @@ namespace EtchBendLines
 
             foreach (var bendline in upBends)
             {
-                var etchLines = bendline.GetEtchLines(EtchLength);
+                var etchLines = GetEtchLines(bendline.Line, EtchLength);
 
                 foreach (var etchLine in etchLines)
                 {
@@ -85,6 +93,66 @@ namespace EtchBendLines
                 return true;
 
             return false;
+        }
+
+        public List<Line> GetEtchLines(Line bendLine, double etchLength)
+        {
+            var lines = new List<Line>();
+
+            var startPoint = new Vector2(bendLine.StartPoint.X, bendLine.StartPoint.Y);
+            var endPoint = new Vector2(bendLine.EndPoint.X, bendLine.EndPoint.Y);
+            var bendLength = startPoint.DistanceTo(endPoint);
+
+            if (bendLength < (etchLength * 3.0))
+            {
+                lines.Add(new Line(bendLine.StartPoint, bendLine.EndPoint));
+            }
+            else
+            {
+                var angle = startPoint.AngleTo(endPoint);
+
+                if (bendLine.IsVertical())
+                {
+                    var x = bendLine.StartPoint.X;
+
+                    var bottomY1 = Math.Min(startPoint.Y, endPoint.Y);
+                    var bottomY2 = bottomY1 + etchLength;
+
+                    var topY1 = Math.Max(startPoint.Y, endPoint.Y);
+                    var topY2 = topY1 - etchLength;
+
+                    var p1 = new Vector2(x, bottomY1);
+                    var p2 = new Vector2(x, bottomY2);
+                    var p3 = new Vector2(x, topY1);
+                    var p4 = new Vector2(x, topY2);
+
+                    lines.Add(new Line(p1, p2));
+                    lines.Add(new Line(p3, p4));
+                }
+                else
+                {
+                    var start = bendLine.StartPoint.ToVector2();
+                    var end = bendLine.EndPoint.ToVector2();
+
+                    var dx = Math.Cos(angle) * etchLength;
+                    var dy = Math.Sin(angle) * etchLength;
+
+                    var p1 = new Vector2(start.X, start.Y);
+                    var p2 = new Vector2(start.X + dx, start.Y + dy);
+                    var p3 = new Vector2(end.X, end.Y);
+                    var p4 = new Vector2(end.X - dx, end.Y - dy);
+
+                    lines.Add(new Line(p1, p2));
+                    lines.Add(new Line(p3, p4));
+                }
+            }
+
+            foreach (var line in lines)
+            {
+                line.Layer = EtchLayer;
+            }
+
+            return lines;
         }
     }
 }
