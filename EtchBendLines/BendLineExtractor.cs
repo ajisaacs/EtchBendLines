@@ -49,7 +49,7 @@ namespace EtchBendLines
 
             foreach (var line in DxfDocument.Lines)
             {
-                if (line.Linetype.Name != "CENTERX2" && line.Layer.Name != "BEND")
+                if (!IsBendLine(line))
                     continue;
 
                 var bend = new Bend
@@ -64,6 +64,11 @@ namespace EtchBendLines
             AssignBendDirections(bends, bendNotes);
 
             return bends.Where(b => b.Radius <= MaxBendRadius).ToList();
+        }
+
+        private bool IsBendLine(Line line)
+        {
+            return line.Linetype.Name == "CENTERX2" && line.Layer.Name == "BEND";
         }
 
         private List<MText> GetBendNotes()
