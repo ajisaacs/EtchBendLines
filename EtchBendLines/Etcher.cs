@@ -3,6 +3,7 @@ using netDxf.Entities;
 using netDxf.Tables;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace EtchBendLines
@@ -19,83 +20,106 @@ namespace EtchBendLines
             Color = AciColor.Green,
         };
 
-        public double EtchLength { get; set; } = 1.0;
+        private const double DefaultEtchLength = 1.0;
 
+        /// <summary>
+        /// Maximum bend radius to be considered. Anything beyond this number will be rolled.
+        /// </summary>
         public double MaxBendRadius { get; set; } = 4.0;
 
-        public void AddEtchLines(string filePath)
+        private DxfDocument LoadDocument(string path)
+        {
+            try
+            {
+                return DxfDocument.Load(path)
+                    ?? throw new InvalidOperationException("DXF load returned null");
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Failed to load DXF '{path}'", ex);
+            }
+        }
+
+        private IEnumerable<Bend> ExtractUpBends(DxfDocument doc)
+        {
+            // your existing BendLineExtractor logic
+            var extractor = new BendLineExtractor(doc);
+            return extractor.GetBendLines()
+                            .Where(b => b.Direction == BendDirection.Up);
+        }
+
+        private HashSet<string> BuildExistingKeySet(DxfDocument doc)
+            => new HashSet<string>(
+                doc.Lines
+                   .Where(l => IsEtchLayer(l.Layer))
+                   .Select(l => KeyFor(l.StartPoint, l.EndPoint))
+            );
+
+        private void InsertEtchLines(DxfDocument doc, IEnumerable<Bend> bends, HashSet<string> existingKeys, double etchLength)
+        {
+            foreach (var bend in bends)
+            {
+                foreach (var etch in GetEtchLines(bend.Line, etchLength))
+                {
+                    var key = KeyFor(etch.StartPoint, etch.EndPoint);
+                    if (existingKeys.Contains(key))
+                    {
+                        // ensure correct layer
+                        var existing = doc.Lines.First(l => KeyFor(l) == key);
+                        existing.Layer = EtchLayer;
+                    }
+                    else
+                    {
+                        etch.Layer = EtchLayer;
+                        doc.AddEntity(etch);
+                        existingKeys.Add(key);
+                    }
+                }
+            }
+        }
+
+        private void SaveDocument(DxfDocument doc, string path)
+        {
+            doc.Save(path);
+            Console.WriteLine($"→ Saved with etch lines: {path}");
+        }
+
+        private static string KeyFor(Line l) => KeyFor(l.StartPoint, l.EndPoint);
+
+        private static string KeyFor(Vector3 a, Vector3 b) => $"{a.X:F3},{a.Y:F3}|{b.X:F3},{b.Y:F3}";
+
+        public void AddEtchLines(string filePath, double etchLength = DefaultEtchLength)
         {
             Console.WriteLine(filePath);
 
-            var bendLineExtractor = new BendLineExtractor(filePath);
-            bendLineExtractor.MaxBendRadius = MaxBendRadius;
+            var doc = LoadDocument(filePath);
+            var upBends = ExtractUpBends(doc);
+            var existing = BuildExistingKeySet(doc);
 
-            var bendLines = bendLineExtractor.GetBendLines();
-
-            if (bendLines.Count == 0)
-            {
-                Console.WriteLine("No bend lines found.");
-                return;
-            }
-            else
-            {
-                Console.WriteLine($"Found {bendLines.Count} bend lines.");
-            }
-
-            foreach (var bendLine in bendLines)
-            {
-                bendLine.Line.Layer = BendLayer;
-                bendLine.Line.Color = AciColor.ByLayer;
-
-                bendLine.BendNote.Layer = BendLayer;
-                bendLine.BendNote.Color = AciColor.ByLayer;
-            }
-
-            var upBends = bendLines.Where(b => b.Direction == BendDirection.Up);
-            var upBendCount = upBends.Count();
-            var downBendCount = bendLines.Count - upBendCount;
-
-            Console.WriteLine($"{upBendCount} Up     {downBendCount} Down");
-
-            foreach (var bendline in upBends)
-            {
-                var etchLines = GetEtchLines(bendline.Line, EtchLength);
-
-                foreach (var etchLine in etchLines)
-                {
-                    var existing = bendLineExtractor.DxfDocument.Lines
-                        .Where(l => IsEtchLayer(l.Layer))
-                        .FirstOrDefault(l => l.StartPoint.IsEqualTo(etchLine.StartPoint) && l.EndPoint.IsEqualTo(etchLine.EndPoint));
-
-                    if (existing != null)
-                    {
-                        // ensure the layer is correct and skip adding the etch line since it already exists.
-                        existing.Layer = etchLine.Layer;
-                        continue;
-                    }
-
-                    bendLineExtractor.DxfDocument.AddEntity(etchLine);
-                }
-            }
-
-            bendLineExtractor.DxfDocument.Save(filePath);
+            InsertEtchLines(doc, upBends, existing, etchLength);
+            SaveDocument(doc, filePath);
         }
 
         private bool IsEtchLayer(Layer layer)
         {
-            if (layer.Name == "ETCH")
+            if (layer == null)
+                return false;
+
+            if (layer.Name.Equals(EtchLayer.Name, StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            if (layer.Name == "SCRIBE")
-                return true;
-
-            if (layer.Name == "SCRIBE-TEXT")
-                return true;
-
-            return false;
+            switch (layer.Name)
+            {
+                case "ETCH":
+                case "SCRIBE":
+                case "SCRIBE-TEXT":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
-        public List<Line> GetEtchLines(Line bendLine, double etchLength)
+        private IEnumerable<Line> GetEtchLines(Line bendLine, double etchLength)
         {
             var lines = new List<Line>();
 
@@ -152,7 +176,7 @@ namespace EtchBendLines
                 line.Layer = EtchLayer;
             }
 
-            return lines;
+            yield break;
         }
     }
 }
