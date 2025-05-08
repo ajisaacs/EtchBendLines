@@ -69,9 +69,7 @@ namespace EtchBendLines
 
         public double? Angle { get; set; }
 
-        public override string ToString()
-        {
-            return $"{Direction.ToString()} {Angle}° R{Radius}";
-        }
+        public override string ToString() 
+            => $"{Direction} {(Angle?.ToString("0.##") ?? "?")}° R{(Radius?.ToString("0.##") ?? "?")}";
     }
 }
