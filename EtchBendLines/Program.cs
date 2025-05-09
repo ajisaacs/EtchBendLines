@@ -12,66 +12,56 @@ namespace EtchBendLines
         {
             try
             {
-                var etcher = new Etcher();
-                etcher.EtchLength = GetAppSettingAsDouble("EtchLength");
-                etcher.MaxBendRadius = GetAppSettingAsDouble("MaxBendRadius");
-
-                var paths = new List<string>(args);
-
-                if (paths.Count == 0)
-                {
-                    paths.Add(AppDomain.CurrentDomain.BaseDirectory);
-                }
-
-                var files = new List<string>();
-
-                foreach (var path in paths)
-                {
-                    if (File.Exists(path))
-                    {
-                        files.Add(path);
-                    }
-                    else if (Directory.Exists(path))
-                    {
-                        files.AddRange(Directory.GetFiles(path, "*.dxf", SearchOption.AllDirectories));
-                    }
-                }
-
-                if (files.Count == 0)
-                {
-                    Console.WriteLine($"No DXF files founds. Place DXF files in \"{AppDomain.CurrentDomain.BaseDirectory}\" and run this program again.");
-                }
-                else
-                {
-                    foreach (var file in files)
-                    {
-                        etcher.AddEtchLines(file);
-                        Console.WriteLine();
-                    }
-                }
+                Run(args);
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"An error occured: {ex.Message}");
+                Console.WriteLine($"An error occurred: {ex.Message}");
                 Console.ResetColor();
             }
 
             PressAnyKeyToExit();
         }
 
-        static double GetAppSettingAsDouble(string name)
+        static void Run(string[] args)
         {
-            double v;
+            var etchLength = AppConfig.GetDouble("EtchLength");
+            var maxRadius = AppConfig.GetDouble("MaxBendRadius");
 
-            try
+            var etcher = new Etcher
             {
-                return double.Parse(ConfigurationManager.AppSettings[name]);
-            }
-            catch
+                MaxBendRadius = maxRadius
+            };
+
+            var files = GetDxfFiles(args);
+            if (files.Count == 0)
             {
-               throw new Exception($"Failed to convert the value of AppSetting[\"{name}\"] to double");
+                Console.WriteLine($"No DXF files found. Place DXF files in \"{AppDomain.CurrentDomain.BaseDirectory}\" and run this program again.");
+                return;
             }
+
+            foreach (var file in files)
+            {
+                etcher.AddEtchLines(file, etchLength);
+                Console.WriteLine();
+            }
+        }
+
+        static List<string> GetDxfFiles(string[] args)
+        {
+            var paths = args.Length > 0 ? args.ToList() : new List<string> { AppDomain.CurrentDomain.BaseDirectory };
+            var files = new List<string>();
+
+            foreach (var path in paths)
+            {
+                if (File.Exists(path))
+                    files.Add(path);
+                else if (Directory.Exists(path))
+                    files.AddRange(Directory.GetFiles(path, "*.dxf", SearchOption.AllDirectories));
+            }
+
+            return files;
         }
 
         static void PressAnyKeyToExit()
