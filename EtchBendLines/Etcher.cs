@@ -86,7 +86,20 @@ namespace EtchBendLines
             {
                 writer.Write();
             }
+
+            FixDegreeSymbol(path);
+
             Console.WriteLine($"→ Saved with etch lines: {path}");
+        }
+
+        private static void FixDegreeSymbol(string path)
+        {
+            var text = File.ReadAllText(path);
+            if (text.Contains("\u00C2\u00B0"))
+            {
+                text = text.Replace("\u00C2\u00B0", "\u00B0");
+                File.WriteAllText(path, text);
+            }
         }
 
         private static string KeyFor(Line l) => KeyFor(l.StartPoint, l.EndPoint);
