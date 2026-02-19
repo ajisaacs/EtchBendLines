@@ -34,6 +34,7 @@ namespace EtchBendLines
             try
             {
                 using var reader = new DxfReader(path);
+                reader.Configuration.CreateDefaults = true;
                 return reader.Read()
                     ?? throw new InvalidOperationException("DXF load returned null");
             }
