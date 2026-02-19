@@ -1,6 +1,8 @@
-﻿using netDxf;
-using netDxf.Entities;
-using netDxf.Tables;
+using ACadSharp;
+using ACadSharp.Entities;
+using ACadSharp.Tables;
+using ACadSharp.IO;
+using CSMath;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,12 +14,12 @@ namespace EtchBendLines
     {
         public readonly Layer BendLayer = new Layer("BEND")
         {
-            Color = AciColor.Yellow
+            Color = Color.Yellow
         };
 
         static readonly Layer EtchLayer = new Layer("ETCH")
         {
-            Color = AciColor.Green,
+            Color = Color.Green,
         };
 
         private const double DefaultEtchLength = 1.0;
@@ -27,33 +29,34 @@ namespace EtchBendLines
         /// </summary>
         public double MaxBendRadius { get; set; } = 4.0;
 
-        private DxfDocument LoadDocument(string path)
+        private CadDocument LoadDocument(string path)
         {
             try
             {
-                return DxfDocument.Load(path)
+                using var reader = new DxfReader(path);
+                return reader.Read()
                     ?? throw new InvalidOperationException("DXF load returned null");
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not InvalidOperationException)
             {
                 throw new ApplicationException($"Failed to load DXF '{path}'", ex);
             }
         }
 
-        private List<Bend> ExtractBends(DxfDocument doc)
+        private List<Bend> ExtractBends(CadDocument doc)
         {
             var extractor = new BendLineExtractor(doc);
             return extractor.GetBendLines();
         }
 
-        private HashSet<string> BuildExistingKeySet(DxfDocument doc)
+        private HashSet<string> BuildExistingKeySet(CadDocument doc)
             => new HashSet<string>(
-                doc.Lines
+                doc.Entities.OfType<Line>()
                    .Where(l => IsEtchLayer(l.Layer))
                    .Select(l => KeyFor(l.StartPoint, l.EndPoint))
             );
 
-        private void InsertEtchLines(DxfDocument doc, IEnumerable<Bend> bends, HashSet<string> existingKeys, double etchLength)
+        private void InsertEtchLines(CadDocument doc, IEnumerable<Bend> bends, HashSet<string> existingKeys, double etchLength)
         {
             foreach (var bend in bends)
             {
@@ -63,28 +66,31 @@ namespace EtchBendLines
                     if (existingKeys.Contains(key))
                     {
                         // ensure correct layer
-                        var existing = doc.Lines.First(l => KeyFor(l) == key);
+                        var existing = doc.Entities.OfType<Line>().First(l => KeyFor(l) == key);
                         existing.Layer = EtchLayer;
                     }
                     else
                     {
                         etch.Layer = EtchLayer;
-                        doc.AddEntity(etch);
+                        doc.Entities.Add(etch);
                         existingKeys.Add(key);
                     }
                 }
             }
         }
 
-        private void SaveDocument(DxfDocument doc, string path)
+        private void SaveDocument(CadDocument doc, string path)
         {
-            doc.Save(path);
+            using (var writer = new DxfWriter(path, doc, false))
+            {
+                writer.Write();
+            }
             Console.WriteLine($"→ Saved with etch lines: {path}");
         }
 
         private static string KeyFor(Line l) => KeyFor(l.StartPoint, l.EndPoint);
 
-        private static string KeyFor(Vector3 a, Vector3 b) => $"{a.X:F3},{a.Y:F3}|{b.X:F3},{b.Y:F3}";
+        private static string KeyFor(XYZ a, XYZ b) => $"{a.X:F3},{a.Y:F3}|{b.X:F3},{b.Y:F3}";
 
         public void AddEtchLines(string filePath, double etchLength = DefaultEtchLength)
         {
@@ -129,8 +135,8 @@ namespace EtchBendLines
         {
             var lines = new List<Line>();
 
-            var startPoint = new Vector2(bendLine.StartPoint.X, bendLine.StartPoint.Y);
-            var endPoint = new Vector2(bendLine.EndPoint.X, bendLine.EndPoint.Y);
+            var startPoint = new XY(bendLine.StartPoint.X, bendLine.StartPoint.Y);
+            var endPoint = new XY(bendLine.EndPoint.X, bendLine.EndPoint.Y);
             var bendLength = startPoint.DistanceTo(endPoint);
 
             if (bendLength < (etchLength * 3.0))
@@ -151,26 +157,26 @@ namespace EtchBendLines
                     var topY1 = Math.Max(startPoint.Y, endPoint.Y);
                     var topY2 = topY1 - etchLength;
 
-                    var p1 = new Vector2(x, bottomY1);
-                    var p2 = new Vector2(x, bottomY2);
-                    var p3 = new Vector2(x, topY1);
-                    var p4 = new Vector2(x, topY2);
+                    var p1 = new XYZ(x, bottomY1, 0);
+                    var p2 = new XYZ(x, bottomY2, 0);
+                    var p3 = new XYZ(x, topY1, 0);
+                    var p4 = new XYZ(x, topY2, 0);
 
                     lines.Add(new Line(p1, p2));
                     lines.Add(new Line(p3, p4));
                 }
                 else
                 {
-                    var start = bendLine.StartPoint.ToVector2();
-                    var end = bendLine.EndPoint.ToVector2();
+                    var start = bendLine.StartPoint.ToXY();
+                    var end = bendLine.EndPoint.ToXY();
 
                     var dx = Math.Cos(angle) * etchLength;
                     var dy = Math.Sin(angle) * etchLength;
 
-                    var p1 = new Vector2(start.X, start.Y);
-                    var p2 = new Vector2(start.X + dx, start.Y + dy);
-                    var p3 = new Vector2(end.X, end.Y);
-                    var p4 = new Vector2(end.X - dx, end.Y - dy);
+                    var p1 = new XYZ(start.X, start.Y, 0);
+                    var p2 = new XYZ(start.X + dx, start.Y + dy, 0);
+                    var p3 = new XYZ(end.X, end.Y, 0);
+                    var p4 = new XYZ(end.X - dx, end.Y - dy, 0);
 
                     lines.Add(new Line(p1, p2));
                     lines.Add(new Line(p3, p4));

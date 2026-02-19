@@ -1,5 +1,7 @@
-﻿using netDxf;
-using netDxf.Entities;
+using ACadSharp;
+using ACadSharp.Entities;
+using ACadSharp.IO;
+using CSMath;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -11,12 +13,13 @@ namespace EtchBendLines
     {
         public BendLineExtractor(string dxfFile)
         {
-            DxfDocument = DxfDocument.Load(dxfFile);
+            using var reader = new DxfReader(dxfFile);
+            Document = reader.Read();
         }
 
-        public BendLineExtractor(DxfDocument dxfDocument)
+        public BendLineExtractor(CadDocument document)
         {
-            DxfDocument = dxfDocument;
+            Document = document;
         }
 
         /// <summary>
@@ -37,7 +40,7 @@ namespace EtchBendLines
             RegexOptions.Compiled | RegexOptions.IgnoreCase
         );
 
-        public DxfDocument DxfDocument { get; private set; }
+        public CadDocument Document { get; private set; }
 
         public List<Bend> GetBendLines()
         {
@@ -47,7 +50,7 @@ namespace EtchBendLines
             if (ReplaceSharpRadius)
                 FixSharpBends();
 
-            foreach (var line in DxfDocument.Lines)
+            foreach (var line in Document.Entities.OfType<Line>())
             {
                 if (!IsBendLine(line))
                     continue;
@@ -68,7 +71,7 @@ namespace EtchBendLines
 
         private bool IsBendLine(Line line)
         {
-            if (line.Linetype.Name != "CENTERX2")
+            if (line.LineType.Name != "CENTERX2")
                 return false;
 
             switch (line.Layer.Name.ToUpperInvariant())
@@ -84,7 +87,7 @@ namespace EtchBendLines
 
         private List<MText> GetBendNotes()
         {
-            return DxfDocument.MTexts
+            return Document.Entities.OfType<MText>()
                 .Where(t => GetBendDirection(t) != BendDirection.Unknown)
                 .ToList();
         }
@@ -159,7 +162,7 @@ namespace EtchBendLines
             for (int i = bendNotesList.Count - 1; i >= 0; i--)
             {
                 var note = bendNotesList[i];
-                var notePos = note.Position.ToVector2();
+                var notePos = note.InsertPoint.ToXY();
                 var perpendicularPoint = bendLine.PointPerpendicularTo(notePos);
                 var dist = notePos.DistanceTo(perpendicularPoint);
                 var maxAcceptableDist = note.Height * 2.0;
@@ -172,14 +175,14 @@ namespace EtchBendLines
                 return null;
 
             var closestNote = bendNotesList.First();
-            var p1 = closestNote.Position.ToVector2();
+            var p1 = closestNote.InsertPoint.ToXY();
             var p2 = bendLine.ClosestPointOnLineTo(p1);
             var dist2 = p1.DistanceTo(p2);
 
             for (int i = 1; i < bendNotesList.Count; i++)
             {
                 var note = bendNotesList[i];
-                var p3 = note.Position.ToVector2();
+                var p3 = note.InsertPoint.ToXY();
                 var p4 = bendLine.ClosestPointOnLineTo(p3);
                 var dist = p3.DistanceTo(p4);
 

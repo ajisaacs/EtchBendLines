@@ -1,6 +1,4 @@
-﻿using netDxf;
-using netDxf.Entities;
-using netDxf.Tables;
+using ACadSharp.Entities;
 using System;
 using System.Collections.Generic;
 
@@ -69,7 +67,7 @@ namespace EtchBendLines
 
         public double? Angle { get; set; }
 
-        public override string ToString() 
+        public override string ToString()
             => $"{Direction} {(Angle?.ToString("0.##") ?? "?")}° R{(Radius?.ToString("0.##") ?? "?")}";
     }
 }

@@ -11,11 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ACadSharp" Version="3.1.32" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\netDxf\netDxf\netDxf.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,5 @@
-﻿using netDxf;
-using netDxf.Entities;
+using ACadSharp.Entities;
+using CSMath;
 using System;
 
 namespace EtchBendLines
@@ -8,12 +8,12 @@ namespace EtchBendLines
     {
         const double TwoPI = Math.PI * 2.0;
 
-        public static Vector2 ToVector2(this Vector3 pt)
+        public static XY ToXY(this XYZ pt)
         {
-            return new Vector2(pt.X, pt.Y);
+            return new XY(pt.X, pt.Y);
         }
 
-        public static bool IsEqualTo(this Vector3 pt, Vector3 pt1)
+        public static bool IsEqualTo(this XYZ pt, XYZ pt1)
         {
             return pt.X.IsEqualTo(pt1.X) && pt.Y.IsEqualTo(pt1.Y) && pt.Z.IsEqualTo(pt1.Z);
         }
@@ -50,10 +50,10 @@ namespace EtchBendLines
             return Math.Round(p1.Y - slope * p1.X, 4);
         }
 
-        public static Vector2 PointPerpendicularTo(this Line line, Vector2 pt)
+        public static XY PointPerpendicularTo(this Line line, XY pt)
         {
-            var startPoint = line.StartPoint.ToVector2();
-            var endPoint = line.EndPoint.ToVector2();
+            var startPoint = line.StartPoint.ToXY();
+            var endPoint = line.EndPoint.ToXY();
 
             var d1 = pt - startPoint;
             var d2 = endPoint - startPoint;
@@ -61,20 +61,20 @@ namespace EtchBendLines
             var lengthSquared = d2.X * d2.X + d2.Y * d2.Y;
             var param = dotProduct / lengthSquared;
 
-            return new Vector2(
+            return new XY(
                 startPoint.X + param * d2.X,
                 startPoint.Y + param * d2.Y);
         }
 
-        public static Vector2 MidPoint(this Line line)
+        public static XY MidPoint(this Line line)
         {
             var x = (line.StartPoint.X + line.EndPoint.X) * 0.5;
             var y = (line.StartPoint.Y + line.EndPoint.Y) * 0.5;
 
-            return new Vector2(x, y);
+            return new XY(x, y);
         }
 
-        public static double DistanceTo(this Vector2 startPoint, Vector2 endPoint)
+        public static double DistanceTo(this XY startPoint, XY endPoint)
         {
             var x = endPoint.X - startPoint.X;
             var y = endPoint.Y - startPoint.Y;
@@ -82,7 +82,7 @@ namespace EtchBendLines
             return Math.Sqrt(x * x + y * y);
         }
 
-        public static double AngleTo(this Vector2 startPoint, Vector2 endPoint)
+        public static double AngleTo(this XY startPoint, XY endPoint)
         {
             var x = endPoint.X - startPoint.X;
             var y = endPoint.Y - startPoint.Y;
@@ -133,10 +133,10 @@ namespace EtchBendLines
             return Math.Abs(b - a) <= tolerance;
         }
 
-        public static Vector2 ClosestPointOnLineTo(this Line line, Vector2 pt)
+        public static XY ClosestPointOnLineTo(this Line line, XY pt)
         {
-            var startPoint = line.StartPoint.ToVector2();
-            var endPoint = line.EndPoint.ToVector2();
+            var startPoint = line.StartPoint.ToXY();
+            var endPoint = line.EndPoint.ToXY();
 
             var diff1 = pt - startPoint;
             var diff2 = endPoint - startPoint;
@@ -150,7 +150,7 @@ namespace EtchBendLines
                 return endPoint;
             else
             {
-                return new Vector2(
+                return new XY(
                     startPoint.X + param * diff2.X,
                     startPoint.Y + param * diff2.Y);
             }
