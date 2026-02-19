@@ -36,7 +36,7 @@ namespace EtchBendLines
         /// The regular expression pattern the bend note must match
         /// </summary>
         static readonly Regex bendNoteRegex = new Regex(
-            @"\b(?<direction>UP|DOWN|DN)\s+(?<angle>\d+(\.\d+)?)°?\s*R\s*(?<radius>\d+(\.\d+)?)\b",
+            @"\b(?<direction>UP|DOWN|DN)\s+(?<angle>\d+(\.\d+)?)[^R\d]*R\s*(?<radius>\d+(\.\d+)?)\b",
             RegexOptions.Compiled | RegexOptions.IgnoreCase
         );
 
@@ -66,7 +66,7 @@ namespace EtchBendLines
 
             AssignBendDirections(bends, bendNotes);
 
-            return bends.Where(b => b.Radius <= MaxBendRadius).ToList();
+            return bends.Where(b => b.Radius == null || b.Radius <= MaxBendRadius).ToList();
         }
 
         private bool IsBendLine(Line line)
@@ -76,6 +76,7 @@ namespace EtchBendLines
 
             switch (line.Layer.Name.ToUpperInvariant())
             {
+                case "0":
                 case "BEND":
                 case "BEND LINES":
                 case "BENDLINES":
