@@ -100,10 +100,11 @@ namespace EtchBendLines
             var doc = LoadDocument(filePath);
             var bends = ExtractBends(doc);
 
-            // Ensure all bend lines are on the BEND layer
+            // Ensure all bend lines are on the BEND layer with ByLayer color
             foreach (var bend in bends)
             {
                 bend.Line.Layer = BendLayer;
+                bend.Line.Color = Color.ByLayer;
             }
 
             var upBends = bends.Where(b => b.Direction == BendDirection.Up);
