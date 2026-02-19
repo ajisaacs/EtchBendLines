@@ -68,7 +68,18 @@ namespace EtchBendLines
 
         private bool IsBendLine(Line line)
         {
-            return line.Linetype.Name == "CENTERX2" && line.Layer.Name == "BEND";
+            if (line.Linetype.Name != "CENTERX2")
+                return false;
+
+            switch (line.Layer.Name.ToUpperInvariant())
+            {
+                case "BEND":
+                case "BEND LINES":
+                case "BENDLINES":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private List<MText> GetBendNotes()

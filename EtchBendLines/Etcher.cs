@@ -40,12 +40,10 @@ namespace EtchBendLines
             }
         }
 
-        private IEnumerable<Bend> ExtractUpBends(DxfDocument doc)
+        private List<Bend> ExtractBends(DxfDocument doc)
         {
-            // your existing BendLineExtractor logic
             var extractor = new BendLineExtractor(doc);
-            return extractor.GetBendLines()
-                            .Where(b => b.Direction == BendDirection.Up);
+            return extractor.GetBendLines();
         }
 
         private HashSet<string> BuildExistingKeySet(DxfDocument doc)
@@ -93,7 +91,15 @@ namespace EtchBendLines
             Console.WriteLine(filePath);
 
             var doc = LoadDocument(filePath);
-            var upBends = ExtractUpBends(doc);
+            var bends = ExtractBends(doc);
+
+            // Ensure all bend lines are on the BEND layer
+            foreach (var bend in bends)
+            {
+                bend.Line.Layer = BendLayer;
+            }
+
+            var upBends = bends.Where(b => b.Direction == BendDirection.Up);
             var existing = BuildExistingKeySet(doc);
 
             InsertEtchLines(doc, upBends, existing, etchLength);
@@ -119,7 +125,7 @@ namespace EtchBendLines
             }
         }
 
-        private IEnumerable<Line> GetEtchLines(Line bendLine, double etchLength)
+        private List<Line> GetEtchLines(Line bendLine, double etchLength)
         {
             var lines = new List<Line>();
 
@@ -176,7 +182,7 @@ namespace EtchBendLines
                 line.Layer = EtchLayer;
             }
 
-            yield break;
+            return lines;
         }
     }
 }
